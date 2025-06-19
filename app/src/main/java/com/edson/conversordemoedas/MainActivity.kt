@@ -1,5 +1,9 @@
 package com.edson.conversordemoedas
 
+
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.edson.conversordemoedas.viewmodel.ConversorViewModel
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -28,58 +32,92 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun ConversorScreen() {
+fun ConversorScreen(viewModel: ConversorViewModel = viewModel()) {
     var valorInput by remember { mutableStateOf("") }
     var moedaOrigem by remember { mutableStateOf("BRL") }
     var moedaDestino by remember { mutableStateOf("USD") }
-    var resultado by remember { mutableStateOf("") }
+
+    val resultado by viewModel.valorConvertido.collectAsState()
 
     val moedas = listOf("BRL", "USD", "EUR")
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        Text("Conversor de Moedas", style = MaterialTheme.typography.headlineSmall)
-
-        OutlinedTextField(
-            value = valorInput,
-            onValueChange = { valorInput = it },
-            label = { Text("Valor a converter") },
-            singleLine = true
-        )
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            DropdownMenuMoeda(
-                selected = moedaOrigem,
-                onSelect = { moedaOrigem = it },
-                moedas = moedas,
-                label = "De"
-            )
-            DropdownMenuMoeda(
-                selected = moedaDestino,
-                onSelect = { moedaDestino = it },
-                moedas = moedas,
-                label = "Para"
-            )
-        }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Conversor de Moedas",
+                        style = MaterialTheme.typography.headlineMedium
+                    )
 
-        Button(onClick = {
-            resultado = converterMoeda(valorInput, moedaOrigem, moedaDestino)
-        }) {
-            Text("Converter")
-        }
+                    OutlinedTextField(
+                        value = valorInput,
+                        onValueChange = { valorInput = it },
+                        label = { Text("Valor a converter") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-        if (resultado.isNotEmpty()) {
-            Text("Resultado: $resultado", style = MaterialTheme.typography.bodyLarge)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        DropdownMenuMoeda(
+                            selected = moedaOrigem,
+                            onSelect = { moedaOrigem = it },
+                            moedas = moedas,
+                            label = "De"
+                        )
+                        DropdownMenuMoeda(
+                            selected = moedaDestino,
+                            onSelect = { moedaDestino = it },
+                            moedas = moedas,
+                            label = "Para"
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            viewModel.converter(valorInput, moedaOrigem, moedaDestino)
+                        },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text("Converter")
+                    }
+
+                    if (resultado.isNotEmpty()) {
+                        Text(
+                            "Resultado: $resultado",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(top = 12.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
+
 fun converterMoeda(valorStr: String, origem: String, destino: String): String {
     val taxas = mapOf(
         "BRL" to 1.0,
